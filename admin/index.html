@@ -184,7 +184,7 @@
           <div class="tile-icon orange"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></div>
           <div class="tile-text"><h3>Deck de ventas</h3><p>Crea un deck personalizado para cada prospect</p></div>
         </div>
-        <a class="tile" href="/producto/" target="_blank" style="text-decoration:none;color:inherit" id="demoLink">
+        <a class="tile" href="http://localhost:3000/producto/index.html" target="_blank" style="text-decoration:none;color:inherit" id="demoLink">
           <div class="tile-icon blue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
           <div class="tile-text"><h3>Demo del producto</h3><p>Abre el prototipo interactivo en vivo</p></div>
         </a>
@@ -254,30 +254,33 @@
               </select>
             </div>
             <div class="form-group">
-              <label>Tipo de plan *</label>
+              <label>Plan *</label>
               <select id="payPlan" required>
-                <option value="contabilidad">Contabilidad</option>
-                <option value="contabilidad_conciliacion">Contabilidad + Conciliacion</option>
+                <option value="contabilidad">Contabilidad Automatica</option>
+                <option value="contabilidad_conciliacion">Contabilidad + Conciliacion Bancaria</option>
               </select>
             </div>
             <div class="form-group">
-              <label>Periodo de facturacion *</label>
-              <select id="payPeriodo" required>
-                <option value="mensual">Mensual</option>
-                <option value="anual">Anual</option>
+              <label>Modalidad de pago *</label>
+              <select id="payModalidad" required>
+                <option value="normal">Normal — Setup completo en mes 1</option>
+                <option value="faseado">Faseado — Setup dividido en 2 meses</option>
               </select>
             </div>
             <div class="form-group">
-              <label>Descuento (%)</label>
-              <input type="number" id="payDescuento" value="0" min="0" max="100">
+              <label>Descuento en setup (%) <span style="font-weight:400;color:var(--muted)">max 50%</span></label>
+              <input type="number" id="payDescuento" value="0" min="0" max="50">
             </div>
             <div class="form-group">
               <label>Datos adicionales</label>
-              <input type="text" id="payNotas" placeholder="CIF, notas...">
+              <input type="text" id="payNotas" placeholder="CIF, notas internas...">
             </div>
           </div>
+          <!-- PRICE PREVIEW -->
+          <div id="pricePreview" style="margin-top:1.25rem;padding:1rem 1.25rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem;color:var(--text2);line-height:1.8"></div>
           <div class="form-actions">
             <button type="submit" class="btn-primary btn-green">Generar link de pago</button>
+            <span style="font-size:0.7rem;color:var(--muted)">Precios sin IVA. Se anade 21% en el checkout.</span>
           </div>
         </form>
         <div class="result" id="payResult">
@@ -299,6 +302,20 @@
             <tbody id="deckTableBody"></tbody>
           </table>
           <div class="no-data" id="noDecks">Aun no has creado ningun deck</div>
+        </div>
+      </div>
+
+      <!-- LINKS DE PAGO RECIENTES -->
+      <div id="paySection" style="margin-top:2rem">
+        <div class="section-header">
+          <h2>Links de pago recientes</h2>
+        </div>
+        <div class="card">
+          <table class="deck-table" id="payTable">
+            <thead><tr><th>Cliente</th><th>Plan</th><th>Setup</th><th>Cuota/mes</th><th>Modalidad</th><th></th></tr></thead>
+            <tbody id="payTableBody"></tbody>
+          </table>
+          <div class="no-data" id="noPays">Aun no has creado ningun link de pago</div>
         </div>
       </div>
     </div>
@@ -331,7 +348,7 @@
     function showApp(){
       document.getElementById('loginWrap').style.display='none';
       document.getElementById('app').classList.add('active');
-      renderQuickStats();renderDecks();
+      renderQuickStats();renderDecks();renderPays();
     }
 
     // TILES → PANELS
@@ -371,7 +388,7 @@
       hist.unshift({tipo:tipoEl.value,empresa:empresaEl.value.trim(),contacto:contactoEl.value.trim(),url,date:new Date().toISOString()});
       if(hist.length>50)hist.pop();
       localStorage.setItem('esphera_decks',JSON.stringify(hist));
-      renderQuickStats();renderDecks();
+      renderQuickStats();renderDecks();renderPays();
     });
     document.getElementById('copyBtn').addEventListener('click',()=>{
       navigator.clipboard.writeText(document.getElementById('deckResult').dataset.url).then(()=>{
@@ -379,16 +396,57 @@
       });
     });
 
-    // PAY FORM
+    // PAY PRICING CONFIG
+    const PLANS={
+      contabilidad:{name:'Contabilidad Automatica',setup:2500,cycle:225},
+      contabilidad_conciliacion:{name:'Contabilidad + Conciliacion',setup:5000,cycle:450}
+    };
+    function updatePricePreview(){
+      const plan=PLANS[document.getElementById('payPlan').value]||PLANS.contabilidad;
+      const mod=document.getElementById('payModalidad').value;
+      const desc=Math.min(parseInt(document.getElementById('payDescuento').value)||0,50);
+      const setupBase=plan.setup;
+      const setupFinal=Math.round(setupBase*(1-desc/100));
+      const setupIva=Math.round(setupFinal*1.21);
+      const cycleIva=Math.round(plan.cycle*1.21);
+      const isF=mod==='faseado';
+      let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem"><strong style="color:var(--text)">${plan.name}</strong><span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">${isF?'Pago faseado':'Pago normal'}</span></div>`;
+      html+=`<div style="display:flex;justify-content:space-between"><span>Setup${desc>0?' <span style="color:var(--green);font-weight:600">(-'+desc+'%)</span>':''}:</span><span style="font-weight:600">${setupFinal.toLocaleString('es-ES')}&euro; <span style="color:var(--muted);font-weight:400">+ IVA = ${setupIva.toLocaleString('es-ES')}&euro;</span></span></div>`;
+      html+=`<div style="display:flex;justify-content:space-between"><span>Cuota mensual:</span><span style="font-weight:600">${plan.cycle}&euro; <span style="color:var(--muted);font-weight:400">+ IVA = ${cycleIva}&euro;</span></span></div>`;
+      html+=`<div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted)">`;
+      if(isF){
+        const half=Math.round(setupIva/2);
+        html+=`Mes 1: ${half}&euro; (setup 1/2) + ${cycleIva}&euro; (cuota) = <strong style="color:var(--text)">${half+cycleIva}&euro;</strong><br>`;
+        html+=`Mes 2: ${setupIva-half}&euro; (setup 2/2) + ${cycleIva}&euro; (cuota) = <strong style="color:var(--text)">${(setupIva-half)+cycleIva}&euro;</strong><br>`;
+        html+=`Mes 3+: ${cycleIva}&euro;/mes`;
+      }else{
+        html+=`Mes 1: ${setupIva.toLocaleString('es-ES')}&euro; (setup) + ${cycleIva}&euro; (cuota) = <strong style="color:var(--text)">${(setupIva+cycleIva).toLocaleString('es-ES')}&euro;</strong><br>`;
+        html+=`Mes 2+: ${cycleIva}&euro;/mes`;
+      }
+      html+=`</div>`;
+      document.getElementById('pricePreview').innerHTML=html;
+    }
+    document.getElementById('payPlan').addEventListener('change',updatePricePreview);
+    document.getElementById('payModalidad').addEventListener('change',updatePricePreview);
+    document.getElementById('payDescuento').addEventListener('input',updatePricePreview);
+    updatePricePreview();
+
+    // PAY FORM SUBMIT
     document.getElementById('payForm').addEventListener('submit',e=>{
       e.preventDefault();
-      const data={cliente:document.getElementById('payCliente').value.trim(),erp:document.getElementById('payErp').value,plan:document.getElementById('payPlan').value,periodo:document.getElementById('payPeriodo').value,descuento:document.getElementById('payDescuento').value||'0',notas:document.getElementById('payNotas').value.trim()};
+      const data={cliente:document.getElementById('payCliente').value.trim(),erp:document.getElementById('payErp').value,plan:document.getElementById('payPlan').value,modalidad:document.getElementById('payModalidad').value,descuento:document.getElementById('payDescuento').value||'0',notas:document.getElementById('payNotas').value.trim()};
       const params=new URLSearchParams(data);
       const base=location.origin+location.pathname.replace(/\/[^\/]*$/,'');
       const url=`${base}/checkout.html?${params.toString()}`;
       document.getElementById('payPreviewBtn').href=url;
       document.getElementById('payResult').classList.add('visible');
       document.getElementById('payResult').dataset.url=url;
+      // Save to history
+      const ph=JSON.parse(localStorage.getItem('esphera_pays')||'[]');
+      ph.unshift({...data,url,date:new Date().toISOString()});
+      if(ph.length>30)ph.pop();
+      localStorage.setItem('esphera_pays',JSON.stringify(ph));
+      renderPays();
     });
     document.getElementById('payCopyBtn').addEventListener('click',()=>{
       navigator.clipboard.writeText(document.getElementById('payResult').dataset.url).then(()=>{
@@ -427,6 +485,31 @@
         const ts=tt>60?Math.round(tt/60)+'m '+Math.round(tt%60)+'s':Math.round(tt)+'s';
         const lv=tk?new Date(tk.lastVisit).toLocaleDateString('es-ES',{day:'numeric',month:'short'}):'—';
         return `<tr><td style="font-weight:600">${d.empresa}</td><td><span class="badge ${d.tipo==='gestoria'?'badge-gest':'badge-emp'}">${d.tipo==='gestoria'?'Gestoria':'Empresa'}</span></td><td><span class="progress-bar"><span class="progress-fill" style="width:${pct}%"></span></span><span class="stat-tiny ${pct>=80?'stat-green':''}">${pct}%</span></td><td class="stat-tiny">${tk?ts:'—'}</td><td class="stat-tiny">${lv}</td><td><button class="btn-sm outline" onclick="showDetail('${encodeURIComponent(d.empresa)}','${d.tipo}')">Detalle</button></td></tr>`;
+      }).join('');
+    }
+
+    // PAY HISTORY TABLE
+    function renderPays(){
+      const ph=JSON.parse(localStorage.getItem('esphera_pays')||'[]');
+      const tbody=document.getElementById('payTableBody'),noData=document.getElementById('noPays'),table=document.getElementById('payTable');
+      if(!ph.length){tbody.innerHTML='';noData.style.display='block';table.style.display='none';return}
+      noData.style.display='none';table.style.display='table';
+      const PL={contabilidad:{name:'Contabilidad',setup:2500,cycle:225},contabilidad_conciliacion:{name:'Contab. + Concil.',setup:5000,cycle:450}};
+      tbody.innerHTML=ph.slice(0,8).map(d=>{
+        const pl=PL[d.plan]||PL.contabilidad;
+        const desc=Math.min(parseInt(d.descuento)||0,50);
+        const sf=desc>0?Math.round(pl.setup*(1-desc/100)):pl.setup;
+        const sfIva=Math.round(sf*1.21);
+        const cIva=Math.round(pl.cycle*1.21);
+        const mod=d.modalidad==='faseado'?'Faseado':'Normal';
+        return `<tr>
+          <td style="font-weight:600">${d.cliente}</td>
+          <td><span class="badge badge-emp" style="background:var(--green-bg);color:var(--green)">${pl.name}</span></td>
+          <td class="stat-tiny">${sfIva.toLocaleString('es-ES')}&euro;${desc>0?' <span style="color:var(--green)">-'+desc+'%</span>':''}</td>
+          <td class="stat-tiny">${cIva}&euro;</td>
+          <td class="stat-tiny">${mod}</td>
+          <td><a class="btn-sm outline" href="${d.url}" target="_blank">Abrir</a></td>
+        </tr>`;
       }).join('');
     }
 

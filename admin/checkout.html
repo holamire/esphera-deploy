@@ -132,60 +132,74 @@
     const cliente=params.get('cliente')||'Tu empresa';
     const erp=params.get('erp')||'';
     const plan=params.get('plan')||'contabilidad';
-    const periodo=params.get('periodo')||'mensual';
-    const descuento=parseInt(params.get('descuento')||'0');
+    const modalidad=params.get('modalidad')||'normal';
+    const descuento=Math.min(parseInt(params.get('descuento')||'0'),50);
     const notas=params.get('notas')||'';
 
     const chk='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>';
 
-    // Plan config
+    // Plan config — precios sin IVA
     const plans={
       contabilidad:{
-        name:'Contabilidad',
-        monthly:149,
-        annual:129,
-        setup:490,
-        features:['Procesamiento automatico de facturas','Extraccion con 97% de precision','Generacion de asientos contables','Sincronizacion con '+erp,'Soporte prioritario']
+        name:'Contabilidad Automatica',
+        setup:2500,
+        cycle:225,
+        features:['Procesamiento automatico de facturas','Extraccion con 97% de precision','Generacion de asientos contables','Sincronizacion con '+(erp||'tu ERP'),'Soporte prioritario','Implementacion personalizada']
       },
       contabilidad_conciliacion:{
-        name:'Contabilidad + Conciliacion',
-        monthly:249,
-        annual:219,
-        setup:690,
-        features:['Todo lo de Contabilidad','Conciliacion bancaria automatica','Importacion Norma 43 / CSV / MT940','Matching inteligente de movimientos','Dashboard de conciliacion','Soporte prioritario']
+        name:'Contabilidad + Conciliacion Bancaria',
+        setup:5000,
+        cycle:450,
+        features:['Todo lo incluido en Contabilidad','Conciliacion bancaria automatica','Importacion Norma 43 / CSV / MT940','Matching inteligente de movimientos','Dashboard de conciliacion en tiempo real','Soporte prioritario','Implementacion personalizada']
       }
     };
 
     const p=plans[plan]||plans.contabilidad;
-    const isAnual=periodo==='anual';
-    const basePrice=isAnual?p.annual:p.monthly;
-    const finalPrice=descuento>0?Math.round(basePrice*(1-descuento/100)):basePrice;
-    const periodoLabel=isAnual?'mes (facturado anualmente)':'mes';
+    const isFaseado=modalidad==='faseado';
+    const setupBase=p.setup;
+    const setupFinal=descuento>0?Math.round(setupBase*(1-descuento/100)):setupBase;
+    const setupIva=Math.round(setupFinal*1.21);
+    const cycleIva=Math.round(p.cycle*1.21);
 
     // Header
     document.getElementById('headerTitle').textContent=`${p.name} para ${cliente}`;
-    document.getElementById('headerSub').textContent=erp?`Integrado con ${erp}`:'Contabilidad automatizada';
+    document.getElementById('headerSub').textContent=erp?`Integrado con ${erp}`:'Contabilidad automatizada para tu empresa';
 
     // Plan details
     document.getElementById('planDetails').innerHTML=`
       <div class="plan-row"><span class="plan-label">Cliente</span><span class="plan-value">${cliente}</span></div>
       ${erp?`<div class="plan-row"><span class="plan-label">ERP</span><span class="plan-value">${erp}</span></div>`:''}
       <div class="plan-row"><span class="plan-label">Plan</span><span class="plan-value">${p.name}</span></div>
-      <div class="plan-row"><span class="plan-label">Facturacion</span><span class="plan-value">${isAnual?'Anual':'Mensual'}</span></div>
+      <div class="plan-row"><span class="plan-label">Modalidad</span><span class="plan-value">${isFaseado?'Pago faseado (2 meses)':'Pago normal'}</span></div>
     `;
 
     // Pricing
-    let pricingHTML=`<div class="pricing-label">Tu precio</div>`;
+    let html=`<div class="pricing-label">Setup e implementacion</div>`;
     if(descuento>0){
-      pricingHTML+=`<div class="pricing-original">${basePrice}&euro;/mes</div>`;
+      html+=`<div class="pricing-original">${setupBase.toLocaleString('es-ES')}&euro;</div>`;
     }
-    pricingHTML+=`<div class="pricing-amount">${finalPrice}<span class="currency">&euro;</span></div>`;
-    pricingHTML+=`<div class="pricing-period">/${periodoLabel}</div>`;
+    html+=`<div class="pricing-amount">${setupFinal.toLocaleString('es-ES')}<span class="currency">&euro;</span></div>`;
     if(descuento>0){
-      pricingHTML+=`<div class="pricing-discount">${descuento}% descuento aplicado</div>`;
+      html+=`<div class="pricing-discount">${descuento}% descuento aplicado</div>`;
     }
-    pricingHTML+=`<div class="pricing-setup">Setup e implementacion: ${p.setup}&euro; (pago unico)</div>`;
-    document.getElementById('pricingBlock').innerHTML=pricingHTML;
+    html+=`<div class="pricing-period" style="margin-top:0.25rem">${setupIva.toLocaleString('es-ES')}&euro; con IVA${isFaseado?' (dividido en 2 pagos)':''}</div>`;
+    html+=`<div class="pricing-setup" style="margin-top:1rem">Cuota mensual: <strong>${p.cycle}&euro; + IVA = ${cycleIva}&euro;/mes</strong></div>`;
+
+    // Payment schedule
+    html+=`<div style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted);line-height:1.8">`;
+    if(isFaseado){
+      const half1=Math.round(setupIva/2),half2=setupIva-half1;
+      html+=`<strong style="color:var(--text)">Calendario de pagos:</strong><br>`;
+      html+=`Mes 1: ${half1.toLocaleString('es-ES')}&euro; (setup 1/2) + ${cycleIva}&euro; (cuota) = <strong>${(half1+cycleIva).toLocaleString('es-ES')}&euro;</strong><br>`;
+      html+=`Mes 2: ${half2.toLocaleString('es-ES')}&euro; (setup 2/2) + ${cycleIva}&euro; (cuota) = <strong>${(half2+cycleIva).toLocaleString('es-ES')}&euro;</strong><br>`;
+      html+=`Mes 3 en adelante: ${cycleIva}&euro;/mes`;
+    }else{
+      html+=`<strong style="color:var(--text)">Calendario de pagos:</strong><br>`;
+      html+=`Mes 1: ${setupIva.toLocaleString('es-ES')}&euro; (setup) + ${cycleIva}&euro; (cuota) = <strong>${(setupIva+cycleIva).toLocaleString('es-ES')}&euro;</strong><br>`;
+      html+=`Mes 2 en adelante: ${cycleIva}&euro;/mes`;
+    }
+    html+=`</div>`;
+    document.getElementById('pricingBlock').innerHTML=html;
 
     // Features
     document.getElementById('featuresList').innerHTML=p.features.map(f=>`<div class="feature">${chk} ${f}</div>`).join('');
