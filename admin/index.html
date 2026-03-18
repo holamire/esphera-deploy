@@ -184,7 +184,7 @@
           <div class="tile-icon orange"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></div>
           <div class="tile-text"><h3>Deck de ventas</h3><p>Crea un deck personalizado para cada prospect</p></div>
         </div>
-        <a class="tile" href="/producto/" target="_blank" style="text-decoration:none;color:inherit" id="demoLink">
+        <a class="tile" href="http://localhost:3000/producto/index.html" target="_blank" style="text-decoration:none;color:inherit" id="demoLink">
           <div class="tile-icon blue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
           <div class="tile-text"><h3>Demo del producto</h3><p>Abre el prototipo interactivo en vivo</p></div>
         </a>
@@ -412,16 +412,17 @@
       const isF=mod==='faseado';
       let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem"><strong style="color:var(--text)">${plan.name}</strong><span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">${isF?'Pago faseado':'Pago normal'}</span></div>`;
       html+=`<div style="display:flex;justify-content:space-between"><span>Setup${desc>0?' <span style="color:var(--green);font-weight:600">(-'+desc+'%)</span>':''}:</span><span style="font-weight:600">${setupFinal.toLocaleString('es-ES')}&euro; <span style="color:var(--muted);font-weight:400">+ IVA = ${setupIva.toLocaleString('es-ES')}&euro;</span></span></div>`;
-      html+=`<div style="display:flex;justify-content:space-between"><span>Cuota mensual:</span><span style="font-weight:600">${plan.cycle}&euro; <span style="color:var(--muted);font-weight:400">+ IVA = ${cycleIva}&euro;</span></span></div>`;
+      html+=`<div style="display:flex;justify-content:space-between"><span>Cuota mensual <span style="color:var(--muted);font-size:0.7rem">(sin descuento)</span>:</span><span style="font-weight:600">${plan.cycle}&euro; <span style="color:var(--muted);font-weight:400">+ IVA = ${cycleIva}&euro;</span></span></div>`;
       html+=`<div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted)">`;
+      html+=`<strong style="color:var(--text)">Calendario de pagos (con IVA):</strong><br>`;
       if(isF){
         const half=Math.round(setupIva/2);
-        html+=`Mes 1: ${half}&euro; (setup 1/2) + ${cycleIva}&euro; (cuota) = <strong style="color:var(--text)">${half+cycleIva}&euro;</strong><br>`;
-        html+=`Mes 2: ${setupIva-half}&euro; (setup 2/2) + ${cycleIva}&euro; (cuota) = <strong style="color:var(--text)">${(setupIva-half)+cycleIva}&euro;</strong><br>`;
-        html+=`Mes 3+: ${cycleIva}&euro;/mes`;
+        html+=`Mes 1: <strong>${half.toLocaleString('es-ES')}&euro;</strong> (setup 1/2)<br>`;
+        html+=`Mes 2: ${(setupIva-half).toLocaleString('es-ES')}&euro; (setup 2/2) + ${cycleIva}&euro; (cuota) = <strong style="color:var(--text)">${((setupIva-half)+cycleIva).toLocaleString('es-ES')}&euro;</strong><br>`;
+        html+=`Mes 3+: <strong>${cycleIva}&euro;/mes</strong>`;
       }else{
-        html+=`Mes 1: ${setupIva.toLocaleString('es-ES')}&euro; (setup) + ${cycleIva}&euro; (cuota) = <strong style="color:var(--text)">${(setupIva+cycleIva).toLocaleString('es-ES')}&euro;</strong><br>`;
-        html+=`Mes 2+: ${cycleIva}&euro;/mes`;
+        html+=`Mes 1: <strong>${setupIva.toLocaleString('es-ES')}&euro;</strong> (setup completo)<br>`;
+        html+=`Mes 2+: <strong>${cycleIva}&euro;/mes</strong> (cuota)`;
       }
       html+=`</div>`;
       document.getElementById('pricePreview').innerHTML=html;
