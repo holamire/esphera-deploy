@@ -333,7 +333,7 @@
 
   <script>
     const PASS='esphera2026';
-    const slideNames=['Hero','Problema','Oportunidad','Como funciona','Producto','Detalle factura','Conciliacion','Comparativa','Impacto + Caso','Integracion','Por que Esphera','FAQ','CTA'];
+    const slideNames=['Portada','El problema','Cómo funciona','Demo en vivo','Detalle factura','Asistente IA','Impacto real','Integración','Por qué Esphera','Siguiente paso'];
     let showAll=false;
 
     // AUTH
@@ -379,7 +379,7 @@
       e.preventDefault();
       const p=new URLSearchParams({tipo:tipoEl.value,empresa:empresaEl.value.trim()});
       if(contactoEl.value.trim())p.set('contacto',contactoEl.value.trim());
-      const base=location.origin+location.pathname.replace(/\/[^\/]*$/,'');
+      const base='http://localhost:3000';
       const url=`${base}/deck.html?${p.toString()}`;
       document.getElementById('previewBtn').href=url;
       document.getElementById('deckResult').classList.add('visible');
@@ -481,11 +481,22 @@
       const list=showAll?hist:hist.slice(0,5);
       tbody.innerHTML=list.map(d=>{
         const tk=JSON.parse(localStorage.getItem('esphera_track_'+encodeURIComponent(d.empresa))||'null');
-        const pct=tk?Math.round((tk.maxSlide+1)/13*100):0;
+        const pct=tk?Math.round((tk.maxSlide+1)/10*100):0;
         const tt=tk?Object.values(tk.slideTime).reduce((a,b)=>a+b,0):0;
         const ts=tt>60?Math.round(tt/60)+'m '+Math.round(tt%60)+'s':Math.round(tt)+'s';
         const lv=tk?new Date(tk.lastVisit).toLocaleDateString('es-ES',{day:'numeric',month:'short'}):'—';
-        return `<tr><td style="font-weight:600">${d.empresa}</td><td><span class="badge ${d.tipo==='gestoria'?'badge-gest':'badge-emp'}">${d.tipo==='gestoria'?'Gestoria':'Empresa'}</span></td><td><span class="progress-bar"><span class="progress-fill" style="width:${pct}%"></span></span><span class="stat-tiny ${pct>=80?'stat-green':''}">${pct}%</span></td><td class="stat-tiny">${tk?ts:'—'}</td><td class="stat-tiny">${lv}</td><td><button class="btn-sm outline" onclick="showDetail('${encodeURIComponent(d.empresa)}','${d.tipo}')">Detalle</button></td></tr>`;
+        return `<tr>
+          <td><a href="${d.url}" target="_blank" style="font-weight:600;color:var(--text);text-decoration:none">${d.empresa}</a>${d.contacto?'<div style="font-size:0.7rem;color:var(--muted);margin-top:1px">'+d.contacto+'</div>':''}</td>
+          <td><span class="badge ${d.tipo==='gestoria'?'badge-gest':'badge-emp'}">${d.tipo==='gestoria'?'Gestoria':'Empresa'}</span></td>
+          <td><span class="progress-bar"><span class="progress-fill" style="width:${pct}%"></span></span><span class="stat-tiny ${pct>=80?'stat-green':''}">${pct}%</span></td>
+          <td class="stat-tiny">${tk?ts:'—'}</td>
+          <td class="stat-tiny">${lv}</td>
+          <td><div style="display:flex;gap:4px">
+            <button class="btn-sm outline" onclick="showDetail('${encodeURIComponent(d.empresa)}','${d.tipo}')">Detalle</button>
+            <button class="btn-sm outline" onclick="navigator.clipboard.writeText('${d.url}');this.textContent='Copiado';setTimeout(()=>this.textContent='Copiar',1500)">Copiar</button>
+            <button class="btn-sm outline" style="color:var(--red);border-color:rgba(239,68,68,0.15)" onclick="deleteDeck(${list.indexOf(d)})">Borrar</button>
+          </div></td>
+        </tr>`;
       }).join('');
     }
 
@@ -503,16 +514,39 @@
         const sfIva=Math.round(sf*1.21);
         const cIva=Math.round(pl.cycle*1.21);
         const mod=d.modalidad==='faseado'?'Faseado':'Normal';
+        const idx=ph.indexOf(d);
         return `<tr>
-          <td style="font-weight:600">${d.cliente}</td>
+          <td><a href="${d.url}" target="_blank" style="font-weight:600;color:var(--text);text-decoration:none">${d.cliente}</a></td>
           <td><span class="badge badge-emp" style="background:var(--green-bg);color:var(--green)">${pl.name}</span></td>
           <td class="stat-tiny">${sfIva.toLocaleString('es-ES')}&euro;${desc>0?' <span style="color:var(--green)">-'+desc+'%</span>':''}</td>
           <td class="stat-tiny">${cIva}&euro;</td>
           <td class="stat-tiny">${mod}</td>
-          <td><a class="btn-sm outline" href="${d.url}" target="_blank">Abrir</a></td>
+          <td><div style="display:flex;gap:4px">
+            <button class="btn-sm outline" onclick="navigator.clipboard.writeText('${d.url}');this.textContent='Copiado';setTimeout(()=>this.textContent='Copiar',1500)">Copiar</button>
+            <button class="btn-sm outline" style="color:var(--red);border-color:rgba(239,68,68,0.15)" onclick="deletePay(${idx})">Borrar</button>
+          </div></td>
         </tr>`;
       }).join('');
     }
+
+    // DELETE functions
+    window.deleteDeck=function(idx){
+      if(!confirm('¿Borrar este deck?'))return;
+      const hist=JSON.parse(localStorage.getItem('esphera_decks')||'[]');
+      const d=hist[idx];
+      if(d){localStorage.removeItem('esphera_track_'+encodeURIComponent(d.empresa));
+        const tidx=JSON.parse(localStorage.getItem('esphera_track_index')||'[]').filter(k=>k!=='esphera_track_'+encodeURIComponent(d.empresa));
+        localStorage.setItem('esphera_track_index',JSON.stringify(tidx));
+      }
+      hist.splice(idx,1);localStorage.setItem('esphera_decks',JSON.stringify(hist));
+      renderQuickStats();renderDecks();
+    };
+    window.deletePay=function(idx){
+      if(!confirm('¿Borrar este link de pago?'))return;
+      const ph=JSON.parse(localStorage.getItem('esphera_pays')||'[]');
+      ph.splice(idx,1);localStorage.setItem('esphera_pays',JSON.stringify(ph));
+      renderQuickStats();renderPays();
+    };
 
     // MODAL
     window.showDetail=function(enc,tipo){
@@ -520,16 +554,27 @@
       document.getElementById('modalTitle').textContent=empresa;
       document.getElementById('modalSub').textContent=tipo==='gestoria'?'Gestoria / Asesoria':'Empresa';
       const s=document.getElementById('slideStats');
-      if(!tk){s.innerHTML='<div class="no-data">Este deck aun no ha sido abierto</div>'}
+      if(!tk){s.innerHTML='<div class="no-data">Este deck aún no ha sido abierto por el prospect</div>'}
       else{
         const mx=Math.max(...Object.values(tk.slideTime),1);
-        s.innerHTML=slideNames.map((n,i)=>{
+        const totalTime=Object.values(tk.slideTime).reduce((a,b)=>a+b,0);
+        const totalMin=totalTime>=60?Math.floor(totalTime/60)+'m '+Math.round(totalTime%60)+'s':Math.round(totalTime)+'s';
+        const pct=Math.round((tk.maxSlide+1)/slideNames.length*100);
+        // Summary header
+        let html=`<div style="display:flex;gap:16px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.06)">
+          <div style="text-align:center;flex:1"><div style="font-size:1.2rem;font-weight:800;color:#fff">${pct}%</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.4)">completado</div></div>
+          <div style="text-align:center;flex:1"><div style="font-size:1.2rem;font-weight:800;color:#fff">${totalMin}</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.4)">tiempo total</div></div>
+          <div style="text-align:center;flex:1"><div style="font-size:1.2rem;font-weight:800;color:#fff">${tk.maxSlide+1}/${slideNames.length}</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.4)">slides vistas</div></div>
+        </div>`;
+        html+=`<div style="font-size:0.65rem;font-weight:600;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Tiempo por slide</div>`;
+        html+=slideNames.map((n,i)=>{
           const t=tk.slideTime[i]||0,v=i<=tk.maxSlide,bp=Math.round(t/mx*100);
           const c=bp>=70?'#F97316':bp>=40?'#F59E0B':bp>=15?'rgba(249,115,22,0.45)':'rgba(255,255,255,0.12)';
-          const lb=bp>=70?'<span style="font-size:0.6rem;font-weight:700;color:#F97316;background:rgba(249,115,22,0.12);padding:2px 6px;border-radius:100px;margin-left:4px">Top</span>':'';
+          const interest=bp>=70?'<span style="font-size:0.55rem;font-weight:700;color:#F97316;background:rgba(249,115,22,0.12);padding:2px 6px;border-radius:100px;margin-left:4px">Muy interesado</span>':bp>=40?'<span style="font-size:0.55rem;font-weight:600;color:#F59E0B;background:rgba(245,158,11,0.1);padding:2px 6px;border-radius:100px;margin-left:4px">Interesado</span>':'';
           const ts=t>=60?Math.floor(t/60)+'m '+Math.round(t%60)+'s':Math.round(t)+'s';
-          return `<div class="slide-stat-row" style="opacity:${v?1:0.25}"><span class="slide-stat-num">${String(i+1).padStart(2,'0')}</span><span class="slide-stat-name">${n}${lb}</span><span class="slide-stat-bar"><span class="slide-stat-bar-fill" style="width:${bp}%;background:${c}"></span></span><span class="slide-stat-time">${v?ts:'—'}</span></div>`;
+          return `<div class="slide-stat-row" style="opacity:${v?1:0.25}"><span class="slide-stat-num">${String(i+1).padStart(2,'0')}</span><span class="slide-stat-name">${n}${interest}</span><span class="slide-stat-bar"><span class="slide-stat-bar-fill" style="width:${bp}%;background:${c}"></span></span><span class="slide-stat-time">${v?ts:'—'}</span></div>`;
         }).join('');
+        s.innerHTML=html;
       }
       document.getElementById('modalOverlay').classList.add('active');
     };
