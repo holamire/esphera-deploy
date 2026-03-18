@@ -184,10 +184,10 @@
           <div class="tile-icon orange"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></div>
           <div class="tile-text"><h3>Deck de ventas</h3><p>Crea un deck personalizado para cada prospect</p></div>
         </div>
-        <a class="tile" href="/producto/" target="_blank" style="text-decoration:none;color:inherit" id="demoLink">
+        <div class="tile" data-panel="demo">
           <div class="tile-icon blue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
-          <div class="tile-text"><h3>Demo del producto</h3><p>Abre el prototipo interactivo en vivo</p></div>
-        </a>
+          <div class="tile-text"><h3>Demo del producto</h3><p>Abre el prototipo personalizado en vivo</p></div>
+        </div>
         <div class="tile" data-panel="pay">
           <div class="tile-icon green"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
           <div class="tile-text"><h3>Link de pago</h3><p>Genera un checkout con plan y precio</p></div>
@@ -230,6 +230,36 @@
         </div>
       </div>
 
+      <!-- PANEL: DEMO -->
+      <div class="panel" id="panel-demo">
+        <div class="panel-header">
+          <h2>Abrir demo personalizada</h2>
+          <button class="panel-close" data-close="demo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+        </div>
+        <form id="demoForm">
+          <div class="form-grid three">
+            <div class="form-group">
+              <label>Tipo de cliente *</label>
+              <select id="demoTipo" required>
+                <option value="gestoria">Gestoria / Asesoria</option>
+                <option value="empresa">Empresa</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Nombre de la empresa *</label>
+              <input type="text" id="demoEmpresa" placeholder="Gestoria Mendoza" required>
+            </div>
+            <div class="form-group">
+              <label>Nombre del contacto *</label>
+              <input type="text" id="demoContacto" placeholder="Juan Garcia" required>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" style="background:#60A5FA">Abrir demo personalizada</button>
+          </div>
+        </form>
+      </div>
+
       <!-- PANEL: PAY -->
       <div class="panel" id="panel-pay">
         <div class="panel-header">
@@ -253,18 +283,13 @@
                 <option value="Otro">Otro</option>
               </select>
             </div>
-            <div class="form-group">
-              <label>Plan *</label>
-              <select id="payPlan" required>
-                <option value="contabilidad">Contabilidad Automatica</option>
-                <option value="contabilidad_conciliacion">Contabilidad + Conciliacion Bancaria</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Modalidad de pago *</label>
-              <select id="payModalidad" required>
-                <option value="normal">Normal — Setup completo en mes 1</option>
-                <option value="faseado">Faseado — Setup dividido en 2 meses</option>
+            <div class="form-group full">
+              <label>Escenario de pago *</label>
+              <select id="payEscenario" required>
+                <option value="1">Contabilidad — Pago normal (setup 2.500€ en mes 1)</option>
+                <option value="2">Contabilidad — Pago faseado (setup 2.500€ en 2 meses)</option>
+                <option value="3">Contabilidad + Conciliacion — Pago normal (setup 5.000€ en mes 1)</option>
+                <option value="4">Contabilidad + Conciliacion — Pago faseado (setup 5.000€ en 2 meses)</option>
               </select>
             </div>
             <div class="form-group">
@@ -396,23 +421,34 @@
       });
     });
 
-    // PAY PRICING CONFIG
-    const PLANS={
-      contabilidad:{name:'Contabilidad Automatica',setup:2500,cycle:225},
-      contabilidad_conciliacion:{name:'Contabilidad + Conciliacion',setup:5000,cycle:450}
+    // DEMO FORM
+    document.getElementById('demoForm').addEventListener('submit',e=>{
+      e.preventDefault();
+      const tipo=document.getElementById('demoTipo').value;
+      const empresa=document.getElementById('demoEmpresa').value.trim();
+      const contacto=document.getElementById('demoContacto').value.trim();
+      const p=new URLSearchParams({tipo,empresa,contacto});
+      window.open(`/producto/?${p.toString()}`,'_blank');
+    });
+
+    // PAY PRICING CONFIG — 4 escenarios
+    const ESCENARIOS={
+      '1':{name:'Contabilidad Automatica',modalidad:'normal',setup:2500,cycle:225},
+      '2':{name:'Contabilidad Automatica',modalidad:'faseado',setup:2500,cycle:225},
+      '3':{name:'Contabilidad + Conciliacion',modalidad:'normal',setup:5000,cycle:450},
+      '4':{name:'Contabilidad + Conciliacion',modalidad:'faseado',setup:5000,cycle:450}
     };
     function updatePricePreview(){
-      const plan=PLANS[document.getElementById('payPlan').value]||PLANS.contabilidad;
-      const mod=document.getElementById('payModalidad').value;
+      const esc=ESCENARIOS[document.getElementById('payEscenario').value]||ESCENARIOS['1'];
       const desc=Math.min(parseInt(document.getElementById('payDescuento').value)||0,50);
-      const setupBase=plan.setup;
+      const setupBase=esc.setup;
       const setupFinal=Math.round(setupBase*(1-desc/100));
       const setupIva=Math.round(setupFinal*1.21);
-      const cycleIva=Math.round(plan.cycle*1.21);
-      const isF=mod==='faseado';
-      let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem"><strong style="color:var(--text)">${plan.name}</strong><span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">${isF?'Pago faseado':'Pago normal'}</span></div>`;
+      const cycleIva=Math.round(esc.cycle*1.21);
+      const isF=esc.modalidad==='faseado';
+      let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem"><strong style="color:var(--text)">${esc.name}</strong><span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">${isF?'Pago faseado':'Pago normal'}</span></div>`;
       html+=`<div style="display:flex;justify-content:space-between"><span>Setup${desc>0?' <span style="color:var(--green);font-weight:600">(-'+desc+'%)</span>':''}:</span><span style="font-weight:600">${setupFinal.toLocaleString('es-ES')}&euro; <span style="color:var(--muted);font-weight:400">+ IVA = ${setupIva.toLocaleString('es-ES')}&euro;</span></span></div>`;
-      html+=`<div style="display:flex;justify-content:space-between"><span>Cuota mensual <span style="color:var(--muted);font-size:0.7rem">(sin descuento)</span>:</span><span style="font-weight:600">${plan.cycle}&euro; <span style="color:var(--muted);font-weight:400">+ IVA = ${cycleIva}&euro;</span></span></div>`;
+      html+=`<div style="display:flex;justify-content:space-between"><span>Cuota mensual <span style="color:var(--muted);font-size:0.7rem">(sin descuento)</span>:</span><span style="font-weight:600">${esc.cycle}&euro; <span style="color:var(--muted);font-weight:400">+ IVA = ${cycleIva}&euro;</span></span></div>`;
       html+=`<div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted)">`;
       html+=`<strong style="color:var(--text)">Calendario de pagos (con IVA):</strong><br>`;
       if(isF){
@@ -427,15 +463,15 @@
       html+=`</div>`;
       document.getElementById('pricePreview').innerHTML=html;
     }
-    document.getElementById('payPlan').addEventListener('change',updatePricePreview);
-    document.getElementById('payModalidad').addEventListener('change',updatePricePreview);
+    document.getElementById('payEscenario').addEventListener('change',updatePricePreview);
     document.getElementById('payDescuento').addEventListener('input',updatePricePreview);
     updatePricePreview();
 
     // PAY FORM SUBMIT
     document.getElementById('payForm').addEventListener('submit',e=>{
       e.preventDefault();
-      const data={cliente:document.getElementById('payCliente').value.trim(),erp:document.getElementById('payErp').value,plan:document.getElementById('payPlan').value,modalidad:document.getElementById('payModalidad').value,descuento:document.getElementById('payDescuento').value||'0',notas:document.getElementById('payNotas').value.trim()};
+      const esc=ESCENARIOS[document.getElementById('payEscenario').value]||ESCENARIOS['1'];
+      const data={cliente:document.getElementById('payCliente').value.trim(),erp:document.getElementById('payErp').value,plan:esc.name.includes('Conciliacion')?'contabilidad_conciliacion':'contabilidad',modalidad:esc.modalidad,descuento:document.getElementById('payDescuento').value||'0',notas:document.getElementById('payNotas').value.trim()};
       const params=new URLSearchParams(data);
       const base=location.origin+location.pathname.replace(/\/[^\/]*$/,'');
       const url=`${base}/checkout.html?${params.toString()}`;
