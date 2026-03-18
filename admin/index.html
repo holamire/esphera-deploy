@@ -296,6 +296,10 @@
               <label>Descuento en setup (%) <span style="font-weight:400;color:var(--muted)">max 50%</span></label>
               <input type="number" id="payDescuento" value="0" min="0" max="50">
             </div>
+            <div class="form-group" style="display:flex;align-items:center;gap:8px;padding-top:1.75rem">
+              <input type="checkbox" id="payExento" style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer">
+              <label for="payExento" style="text-transform:none;letter-spacing:0;font-size:0.82rem;color:var(--text2);cursor:pointer;margin:0">Exento de IVA <span style="font-weight:400;color:var(--muted)">(Canarias, Ceuta, Melilla)</span></label>
+            </div>
             <div class="form-group">
               <label>Datos adicionales</label>
               <input type="text" id="payNotas" placeholder="CIF, notas internas...">
@@ -428,7 +432,9 @@
       const empresa=document.getElementById('demoEmpresa').value.trim();
       const contacto=document.getElementById('demoContacto').value.trim();
       const p=new URLSearchParams({tipo,empresa,contacto});
-      window.open(`/producto/?${p.toString()}`,'_blank');
+      // In local dev, producto is on port 3000. In production (same domain), use /producto/
+      const base=location.port==='3001'?'http://localhost:3000':''
+      window.open(`${base}/producto/?${p.toString()}`,'_blank');
     });
 
     // PAY PRICING CONFIG — 4 escenarios
@@ -441,14 +447,17 @@
     function updatePricePreview(){
       const esc=ESCENARIOS[document.getElementById('payEscenario').value]||ESCENARIOS['1'];
       const desc=Math.min(parseInt(document.getElementById('payDescuento').value)||0,50);
+      const exento=document.getElementById('payExento').checked;
+      const iva=exento?1:1.21;
+      const ivaLabel=exento?'(exento IVA)':'+IVA';
       const setupBase=esc.setup;
       const setupFinal=Math.round(setupBase*(1-desc/100));
-      const setupIva=Math.round(setupFinal*1.21);
-      const cycleIva=Math.round(esc.cycle*1.21);
+      const setupIva=Math.round(setupFinal*iva);
+      const cycleIva=Math.round(esc.cycle*iva);
       const isF=esc.modalidad==='faseado';
       let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem"><strong style="color:var(--text)">${esc.name}</strong><span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">${isF?'Pago faseado':'Pago normal'}</span></div>`;
-      html+=`<div style="display:flex;justify-content:space-between"><span>Setup${desc>0?' <span style="color:var(--green);font-weight:600">(-'+desc+'%)</span>':''}:</span><span style="font-weight:600">${setupFinal.toLocaleString('es-ES')}&euro; <span style="color:var(--muted);font-weight:400">+ IVA = ${setupIva.toLocaleString('es-ES')}&euro;</span></span></div>`;
-      html+=`<div style="display:flex;justify-content:space-between"><span>Cuota mensual <span style="color:var(--muted);font-size:0.7rem">(sin descuento)</span>:</span><span style="font-weight:600">${esc.cycle}&euro; <span style="color:var(--muted);font-weight:400">+ IVA = ${cycleIva}&euro;</span></span></div>`;
+      html+=`<div style="display:flex;justify-content:space-between"><span>Setup${desc>0?' <span style="color:var(--green);font-weight:600">(-'+desc+'%)</span>':''}:</span><span style="font-weight:600">${exento?'':setupFinal.toLocaleString('es-ES')+'&euro; '+ivaLabel+' = '}${setupIva.toLocaleString('es-ES')}&euro;</span></div>`;
+      html+=`<div style="display:flex;justify-content:space-between"><span>Cuota mensual <span style="color:var(--muted);font-size:0.7rem">(sin descuento)</span>:</span><span style="font-weight:600">${exento?'':esc.cycle+'&euro; '+ivaLabel+' = '}${cycleIva}&euro;</span></div>`;
       html+=`<div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted)">`;
       html+=`<strong style="color:var(--text)">Calendario de pagos (con IVA):</strong><br>`;
       if(isF){
@@ -465,13 +474,14 @@
     }
     document.getElementById('payEscenario').addEventListener('change',updatePricePreview);
     document.getElementById('payDescuento').addEventListener('input',updatePricePreview);
+    document.getElementById('payExento').addEventListener('change',updatePricePreview);
     updatePricePreview();
 
     // PAY FORM SUBMIT
     document.getElementById('payForm').addEventListener('submit',e=>{
       e.preventDefault();
       const esc=ESCENARIOS[document.getElementById('payEscenario').value]||ESCENARIOS['1'];
-      const data={cliente:document.getElementById('payCliente').value.trim(),erp:document.getElementById('payErp').value,plan:esc.name.includes('Conciliacion')?'contabilidad_conciliacion':'contabilidad',modalidad:esc.modalidad,descuento:document.getElementById('payDescuento').value||'0',notas:document.getElementById('payNotas').value.trim()};
+      const data={cliente:document.getElementById('payCliente').value.trim(),erp:document.getElementById('payErp').value,plan:esc.name.includes('Conciliacion')?'contabilidad_conciliacion':'contabilidad',modalidad:esc.modalidad,descuento:document.getElementById('payDescuento').value||'0',exento:document.getElementById('payExento').checked?'1':'0',notas:document.getElementById('payNotas').value.trim()};
       const params=new URLSearchParams(data);
       const base=location.origin+location.pathname.replace(/\/[^\/]*$/,'');
       const url=`${base}/checkout.html?${params.toString()}`;

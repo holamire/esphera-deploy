@@ -134,6 +134,7 @@
     const plan=params.get('plan')||'contabilidad';
     const modalidad=params.get('modalidad')||'normal';
     const descuento=Math.min(parseInt(params.get('descuento')||'0'),50);
+    const exento=params.get('exento')==='1';
     const notas=params.get('notas')||'';
 
     const chk='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>';
@@ -158,8 +159,9 @@
     const isFaseado=modalidad==='faseado';
     const setupBase=p.setup;
     const setupFinal=descuento>0?Math.round(setupBase*(1-descuento/100)):setupBase;
-    const setupIva=Math.round(setupFinal*1.21);
-    const cycleIva=Math.round(p.cycle*1.21);
+    const iva=exento?1:1.21;
+    const setupIva=Math.round(setupFinal*iva);
+    const cycleIva=Math.round(p.cycle*iva);
 
     // Header
     document.getElementById('headerTitle').textContent=`${p.name} para ${cliente}`;
@@ -182,8 +184,8 @@
     if(descuento>0){
       html+=`<div class="pricing-discount">${descuento}% descuento aplicado</div>`;
     }
-    html+=`<div class="pricing-period" style="margin-top:0.25rem">${setupIva.toLocaleString('es-ES')}&euro; con IVA${isFaseado?' (dividido en 2 pagos)':''}</div>`;
-    html+=`<div class="pricing-setup" style="margin-top:1rem">Cuota mensual: <strong>${p.cycle}&euro; + IVA = ${cycleIva}&euro;/mes</strong></div>`;
+    html+=`<div class="pricing-period" style="margin-top:0.25rem">${exento?'Exento de IVA':'Incluye 21% IVA'}${isFaseado?' — dividido en 2 pagos':''}</div>`;
+    html+=`<div class="pricing-setup" style="margin-top:1rem">Cuota mensual: <strong>${cycleIva}&euro;/mes</strong>${exento?' (exento IVA)':' (IVA incl.)'}</div>`;
 
     // Payment schedule
     html+=`<div style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted);line-height:1.8">`;
