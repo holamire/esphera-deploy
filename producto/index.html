@@ -2572,7 +2572,6 @@
       { name: 'Marcos', photo: 'person-2.png' },
       { name: 'Elena', photo: 'person-3.png' },
       { name: 'Iker', photo: 'person-5.png' },
-      { name: 'David', photo: 'person-6.png' },
       { name: 'Amaia', photo: 'person-7.png' }
     ];
     const chatPersona = chatPersonas[Math.floor(Math.random() * chatPersonas.length)];
@@ -2608,7 +2607,7 @@
             <img src="${chatPersona.photo}" alt="${chatPersona.name}" class="w-full h-full object-cover" style="object-position: 60% 20%;">
           </div>
           <div class="bg-white rounded-2xl rounded-tl-md px-4 py-2.5 shadow-sm border border-slate-100 max-w-[280px]">
-            <p class="text-sm text-slate-700 leading-relaxed">Hola Juan! Soy <strong>${chatPersona.name}</strong> 😊 He visto que tienes <strong>7 facturas por revisar</strong> y <strong>3 incidencias nuevas</strong>. ¿Quieres que te ayude con algo?</p>
+            <p class="text-sm text-slate-700 leading-relaxed">¡Hola, Juan! Soy <strong>${chatPersona.name}</strong> 😊 He visto que tienes <strong>7 facturas por revisar</strong> y <strong>3 incidencias nuevas</strong>. ¿Te ayudo con algo?</p>
           </div>
         </div>
         <div id="chat-chips" class="flex flex-wrap gap-2 pl-9">
@@ -2841,6 +2840,44 @@
         });
       }
     }
+  </script>
+  <script>
+    // URL param personalization
+    (function(){
+      const p=new URLSearchParams(location.search);
+      const empresa=p.get('empresa');
+      const contacto=p.get('contacto');
+      const tipo=p.get('tipo');
+      if(!empresa&&!contacto)return;
+      const name=contacto||'Juan';
+      const biz=empresa||'Gestoria Mendoza';
+      const firstName=name.split(' ')[0];
+      const emailDomain=biz.toLowerCase().replace(/[^a-z0-9]/g,'')+'.es';
+      const email=firstName.toLowerCase()+'@'+emailDomain;
+      const desc=tipo==='empresa'?'Departamento financiero':'Asesoria fiscal y contable';
+      // Replace all text nodes
+      function replaceText(root){
+        const walk=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+        while(walk.nextNode()){
+          const n=walk.currentNode;
+          if(n.textContent.includes('Gestoria Mendoza'))n.textContent=n.textContent.replace(/Gestoria Mendoza/g,biz);
+          if(n.textContent.includes('Gestoría Mendoza'))n.textContent=n.textContent.replace(/Gestoría Mendoza/g,biz);
+          if(n.textContent.includes('juan@gestoriamendoza.es'))n.textContent=n.textContent.replace(/juan@gestoriamendoza\.es/g,email);
+          if(n.textContent.includes('Hola, Juan'))n.textContent=n.textContent.replace(/Hola, Juan/g,'Hola, '+firstName);
+          if(n.textContent.includes('>Juan<'))n.textContent=n.textContent.replace(/>Juan</g,'>'+firstName+'<');
+          if(n.textContent==='Juan')n.textContent=firstName;
+          if(n.textContent.includes('B48901234'))n.textContent=n.textContent.replace(/B48901234/g,'B'+Math.floor(10000000+Math.random()*90000000));
+          if(n.textContent.includes('Asesoría fiscal y contable'))n.textContent=n.textContent.replace(/Asesoría fiscal y contable/g,desc);
+        }
+      }
+      // Run after DOM ready
+      replaceText(document.body);
+      // Also patch elements with alt attributes
+      document.querySelectorAll('img[alt="Juan"]').forEach(img=>img.alt=firstName);
+      // Observe for dynamic content
+      const obs=new MutationObserver(muts=>{muts.forEach(m=>{m.addedNodes.forEach(n=>{if(n.nodeType===1)replaceText(n)})})});
+      obs.observe(document.body,{childList:true,subtree:true});
+    })();
   </script>
 </body>
 </html>
