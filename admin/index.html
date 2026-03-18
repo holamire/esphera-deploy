@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Esphera — Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#FAF7F2;--bg2:#fff;--bg3:#F5F0EA;
+      --navy:#0D1526;
+      --border:#EDE8DF;--border2:#DDD6CB;
+      --text:#0F172A;--text2:#334155;--muted:#64748B;
+      --accent:#F97316;--accent-hover:#EA580C;--accent-light:#FDBA74;--accent-bg:rgba(249,115,22,0.08);
+      --green:#10B981;--green-bg:rgba(16,185,129,0.1);
+      --red:#EF4444;--red-bg:rgba(239,68,68,0.08);
+      --radius:16px;--radius-sm:10px;
+    }
+    body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+    h1,h2,h3{font-family:'Plus Jakarta Sans',-apple-system,sans-serif}
+
+    /* LOGIN */
+    .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:linear-gradient(180deg,#0D1526 0%,#111B30 60%,#0D1526 100%)}
+    .login-box{width:100%;max-width:380px;text-align:center}
+    .login-logo{margin-bottom:1rem;display:flex;flex-direction:column;align-items:center;gap:0.75rem}
+    .login-logo svg{width:48px;height:48px;color:var(--accent)}
+    .login-logo span{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.5rem;font-weight:800;color:#fff}
+    .login-sub{color:rgba(255,255,255,0.45);font-size:0.85rem;margin-bottom:2rem}
+    .login-box input{width:100%;padding:14px 16px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius-sm);color:#fff;font-size:0.95rem;font-family:inherit;margin-bottom:1rem;transition:border-color 0.2s}
+    .login-box input:focus{outline:none;border-color:var(--accent-light);background:rgba(255,255,255,0.1)}
+    .login-box input::placeholder{color:rgba(255,255,255,0.35)}
+    .login-btn{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-size:0.95rem;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:all 0.2s}
+    .login-btn:hover{background:var(--accent-hover);box-shadow:0 4px 20px rgba(249,115,22,0.3)}
+    .login-error{color:#f87171;font-size:0.8rem;margin-top:0.75rem;display:none}
+
+    /* APP */
+    .app{display:none}.app.active{display:block}
+
+    /* TOPBAR */
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:1rem 2.5rem;border-bottom:1px solid var(--border);background:#fff}
+    .topbar-logo{display:flex;align-items:center;gap:8px}
+    .topbar-logo svg{width:24px;height:24px;color:var(--text)}
+    .topbar-logo span{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.1rem;font-weight:800;color:var(--text);letter-spacing:-0.02em}
+    .topbar-logout{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-sm);font-size:0.78rem;color:var(--muted);cursor:pointer;transition:all 0.2s;background:none;border:1px solid transparent}
+    .topbar-logout:hover{background:var(--red-bg);color:var(--red);border-color:rgba(239,68,68,0.15)}
+
+    /* MAIN */
+    .main{max-width:900px;margin:0 auto;padding:2.5rem 2rem 4rem}
+
+    /* WELCOME */
+    .welcome{margin-bottom:2rem}
+    .welcome h1{font-size:1.5rem;font-weight:800;letter-spacing:-0.03em;margin-bottom:0.3rem}
+    .welcome p{font-size:0.88rem;color:var(--muted);line-height:1.5}
+
+    /* QUICK STATS */
+    .quick-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:2rem}
+    .quick-stat{background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem 1.25rem;box-shadow:0 1px 2px rgba(0,0,0,0.03)}
+    .quick-stat-label{font-size:0.58rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);font-weight:600;margin-bottom:0.25rem}
+    .quick-stat-value{font-family:'Plus Jakarta Sans',sans-serif;font-size:1.4rem;font-weight:800}
+    .quick-stat-value.orange{color:var(--accent)}
+    .quick-stat-value.green{color:var(--green)}
+
+    /* ACTION TILES */
+    .tiles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:2rem}
+    @media(max-width:700px){.tiles{grid-template-columns:1fr}}
+    .tile{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:1rem;box-shadow:0 1px 2px rgba(0,0,0,0.03)}
+    .tile:hover{border-color:var(--border2);box-shadow:0 4px 12px rgba(0,0,0,0.06);transform:translateY(-1px)}
+    .tile.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+    .tile-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .tile-icon.orange{background:var(--accent-bg);color:var(--accent)}
+    .tile-icon.blue{background:rgba(96,165,250,0.1);color:#60A5FA}
+    .tile-icon.green{background:var(--green-bg);color:var(--green)}
+    .tile-text h3{font-size:0.88rem;font-weight:700;letter-spacing:-0.01em;margin-bottom:0.15rem}
+    .tile-text p{font-size:0.72rem;color:var(--muted);line-height:1.4}
+
+    /* PANEL (expandable form area) */
+    .panel{display:none;background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:2rem;margin-bottom:2rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);animation:panelIn 0.25s ease}
+    .panel.active{display:block}
+    @keyframes panelIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+    .panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+    .panel-header h2{font-size:1.1rem;font-weight:800;letter-spacing:-0.02em}
+    .panel-close{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;border-radius:6px;transition:all 0.15s}
+    .panel-close:hover{background:var(--bg3);color:var(--text)}
+
+    /* FORMS */
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    .form-grid.three{grid-template-columns:1fr 1fr 1fr}
+    @media(max-width:600px){.form-grid,.form-grid.three{grid-template-columns:1fr}}
+    .form-group{margin-bottom:0}
+    .form-group.full{grid-column:1/-1}
+    .form-group label{display:block;font-size:0.7rem;font-weight:600;color:var(--text2);margin-bottom:0.4rem}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:0.88rem;font-family:inherit;transition:all 0.2s}
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(249,115,22,0.08)}
+    .form-group input::placeholder,.form-group textarea::placeholder{color:var(--muted)}
+    .form-group select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748B' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 1rem center}
+    .form-group textarea{resize:vertical;min-height:70px}
+    .form-actions{display:flex;align-items:center;gap:0.75rem;margin-top:1.25rem}
+    .btn-primary{padding:12px 24px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-size:0.88rem;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:all 0.2s}
+    .btn-primary:hover{background:var(--accent-hover);box-shadow:0 4px 20px rgba(249,115,22,0.3)}
+    .btn-primary:disabled{opacity:0.3;cursor:not-allowed}
+    .btn-green{background:var(--green)}.btn-green:hover{background:#059669;box-shadow:0 4px 20px rgba(16,185,129,0.3)}
+
+    /* RESULT */
+    .result{display:none;align-items:center;gap:0.75rem;padding:0.85rem 1rem;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:var(--radius-sm);margin-top:1.25rem}
+    .result.visible{display:flex}
+    .result-label{font-size:0.8rem;color:var(--green);font-weight:600;display:flex;align-items:center;gap:5px;flex:1}
+    .btn-sm{padding:8px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.78rem;cursor:pointer;transition:all 0.2s;font-weight:600;white-space:nowrap;text-decoration:none}
+    .btn-sm:hover{background:var(--bg3);border-color:var(--border2)}
+    .btn-sm.outline{background:transparent}
+    .btn-sm.outline:hover{border-color:var(--accent);color:var(--accent)}
+
+    /* SECTION */
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem}
+    .section-header h2{font-size:1rem;font-weight:800;letter-spacing:-0.02em}
+    .section-toggle{font-size:0.75rem;color:var(--accent);cursor:pointer;background:none;border:none;font-weight:600;font-family:inherit}
+
+    /* TABLE */
+    .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.03)}
+    .deck-table{width:100%;border-collapse:collapse}
+    .deck-table th{text-align:left;font-size:0.58rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--border);font-weight:600}
+    .deck-table td{padding:10px 14px;font-size:0.82rem;color:var(--text2);border-bottom:1px solid var(--bg3)}
+    .deck-table tr:hover td{background:rgba(249,115,22,0.02)}
+    .badge{display:inline-flex;padding:3px 10px;border-radius:100px;font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em}
+    .badge-gest{background:rgba(139,92,246,0.1);color:#a78bfa}
+    .badge-emp{background:var(--accent-bg);color:var(--accent)}
+    .progress-bar{width:80px;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:6px}
+    .progress-fill{height:100%;border-radius:2px;background:var(--accent)}
+    .stat-tiny{font-size:0.72rem;color:var(--muted)}
+    .stat-green{color:var(--green)}
+    .no-data{text-align:center;padding:2.5rem;color:var(--muted);font-size:0.82rem}
+
+    /* MODAL (dark) */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(8px);z-index:100;align-items:center;justify-content:center;padding:2rem}
+    .modal-overlay.active{display:flex}
+    .modal{background:var(--navy);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius);width:100%;max-width:640px;max-height:80vh;overflow-y:auto;padding:2rem;color:#fff}
+    .modal h2{font-size:1.1rem;font-weight:800;margin-bottom:0.25rem;color:#fff}
+    .modal-sub{font-size:0.8rem;color:rgba(255,255,255,0.45);margin-bottom:1.5rem}
+    .slide-stats{display:grid;gap:4px}
+    .slide-stat-row{display:grid;grid-template-columns:30px 1fr 80px 60px;gap:8px;align-items:center;padding:8px 10px;border-radius:8px;font-size:0.8rem}
+    .slide-stat-row:hover{background:rgba(255,255,255,0.04)}
+    .slide-stat-num{color:rgba(255,255,255,0.45);font-weight:700;font-size:0.7rem}
+    .slide-stat-name{color:rgba(255,255,255,0.75)}
+    .slide-stat-bar{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
+    .slide-stat-bar-fill{height:100%;background:var(--accent);border-radius:2px}
+    .slide-stat-time{font-size:0.72rem;color:rgba(255,255,255,0.45);text-align:right}
+    .modal .btn-sm{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.1);color:#fff}
+    .modal .btn-sm:hover{background:rgba(255,255,255,0.12)}
+    .modal .no-data{color:rgba(255,255,255,0.45)}
+  </style>
+</head>
+<body>
+  <!-- LOGIN -->
+  <div class="login-wrap" id="loginWrap">
+    <div class="login-box">
+      <div class="login-logo"><svg viewBox="0 0 202 227" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M100.604 35V46.7323C111.431 46.7323 122.055 49.4076 131.558 54.4029C101.719 99.904 50.2415 110.166 33.7511 112.333C33.9601 98.5315 38.4328 85.162 46.7999 73.8407C57.3964 59.4958 72.9393 50.1392 90.5723 47.4848C93.8955 46.9831 97.2674 46.7323 100.598 46.7323V35C96.717 35 92.7808 35.2856 88.8306 35.8848C45.9639 42.3292 16.4386 82.3055 22.8829 125.173C28.735 164.09 62.2105 192 100.402 192C104.283 192 108.219 191.707 112.169 191.115C155.036 184.671 184.561 144.694 178.117 101.827C172.265 62.9165 138.796 35 100.604 35ZM34.6011 124.093C52.3664 122.003 108.303 111.511 141.423 60.7568C142.252 61.3977 143.067 62.0596 143.868 62.7424C150.152 68.1069 155.322 74.5583 159.195 81.7203C123.797 144.541 55.7941 150.17 45.0373 150.665C39.7147 142.723 36.1338 133.673 34.5941 124.093H34.6011ZM110.428 179.522C107.105 180.024 103.733 180.275 100.402 180.275C84.5948 180.275 69.226 174.59 57.1317 164.258C56.1772 163.443 55.2506 162.593 54.345 161.722C77.21 159.172 131.001 147.614 164.72 95.2919C165.486 98.002 166.092 100.761 166.517 103.576C171.993 139.978 146.829 174.046 110.428 179.522Z" fill="currentColor"/></svg><span>Esphera</span></div>
+      <p class="login-sub">Dashboard</p>
+      <form id="loginForm">
+        <input type="password" id="loginPass" placeholder="Contrasena" autocomplete="current-password">
+        <button type="submit" class="login-btn">Entrar</button>
+      </form>
+      <div class="login-error" id="loginError">Contrasena incorrecta</div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div class="app" id="app">
+    <div class="topbar">
+      <div class="topbar-logo"><svg viewBox="0 0 202 227" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M100.604 35V46.7323C111.431 46.7323 122.055 49.4076 131.558 54.4029C101.719 99.904 50.2415 110.166 33.7511 112.333C33.9601 98.5315 38.4328 85.162 46.7999 73.8407C57.3964 59.4958 72.9393 50.1392 90.5723 47.4848C93.8955 46.9831 97.2674 46.7323 100.598 46.7323V35C96.717 35 92.7808 35.2856 88.8306 35.8848C45.9639 42.3292 16.4386 82.3055 22.8829 125.173C28.735 164.09 62.2105 192 100.402 192C104.283 192 108.219 191.707 112.169 191.115C155.036 184.671 184.561 144.694 178.117 101.827C172.265 62.9165 138.796 35 100.604 35ZM34.6011 124.093C52.3664 122.003 108.303 111.511 141.423 60.7568C142.252 61.3977 143.067 62.0596 143.868 62.7424C150.152 68.1069 155.322 74.5583 159.195 81.7203C123.797 144.541 55.7941 150.17 45.0373 150.665C39.7147 142.723 36.1338 133.673 34.5941 124.093H34.6011ZM110.428 179.522C107.105 180.024 103.733 180.275 100.402 180.275C84.5948 180.275 69.226 174.59 57.1317 164.258C56.1772 163.443 55.2506 162.593 54.345 161.722C77.21 159.172 131.001 147.614 164.72 95.2919C165.486 98.002 166.092 100.761 166.517 103.576C171.993 139.978 146.829 174.046 110.428 179.522Z" fill="currentColor"/></svg><span>Esphera</span></div>
+      <button class="topbar-logout" id="logoutBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg> Cerrar sesion</button>
+    </div>
+
+    <div class="main">
+      <div class="welcome">
+        <h1>Esphera Hub</h1>
+        <p>Todo lo que necesitas para cerrar tu siguiente cliente.</p>
+      </div>
+
+      <div class="quick-stats" id="quickStats"></div>
+
+      <!-- TILES -->
+      <div class="tiles">
+        <div class="tile" data-panel="deck">
+          <div class="tile-icon orange"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></div>
+          <div class="tile-text"><h3>Deck de ventas</h3><p>Crea un deck personalizado para cada prospect</p></div>
+        </div>
+        <a class="tile" href="/producto/" target="_blank" style="text-decoration:none;color:inherit" id="demoLink">
+          <div class="tile-icon blue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+          <div class="tile-text"><h3>Demo del producto</h3><p>Abre el prototipo interactivo en vivo</p></div>
+        </a>
+        <div class="tile" data-panel="pay">
+          <div class="tile-icon green"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+          <div class="tile-text"><h3>Link de pago</h3><p>Genera un checkout con plan y precio</p></div>
+        </div>
+      </div>
+
+      <!-- PANEL: DECK -->
+      <div class="panel" id="panel-deck">
+        <div class="panel-header">
+          <h2>Crear deck de ventas</h2>
+          <button class="panel-close" data-close="deck"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+        </div>
+        <form id="deckForm">
+          <div class="form-grid three">
+            <div class="form-group">
+              <label>Tipo de cliente</label>
+              <select id="tipo" required>
+                <option value="">Selecciona...</option>
+                <option value="gestoria">Gestoria / Asesoria</option>
+                <option value="empresa">Empresa</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Nombre de la empresa</label>
+              <input type="text" id="empresa" placeholder="Asesores Lopez" required>
+            </div>
+            <div class="form-group">
+              <label>Persona de contacto</label>
+              <input type="text" id="contacto" placeholder="Maria Garcia">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" id="generateBtn" disabled>Generar link del deck</button>
+          </div>
+        </form>
+        <div class="result" id="deckResult">
+          <span class="result-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Link creado</span>
+          <button class="btn-sm" id="copyBtn">Copiar link</button>
+          <a class="btn-sm outline" id="previewBtn" href="#" target="_blank">Abrir</a>
+        </div>
+      </div>
+
+      <!-- PANEL: PAY -->
+      <div class="panel" id="panel-pay">
+        <div class="panel-header">
+          <h2>Crear link de pago</h2>
+          <button class="panel-close" data-close="pay"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+        </div>
+        <form id="payForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nombre del cliente *</label>
+              <input type="text" id="payCliente" placeholder="Empresa SL" required>
+            </div>
+            <div class="form-group">
+              <label>ERP *</label>
+              <select id="payErp" required>
+                <option value="">Selecciona un ERP</option>
+                <option value="A3">A3</option>
+                <option value="Holded">Holded</option>
+                <option value="Sage">Sage</option>
+                <option value="ContaPlus">ContaPlus</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tipo de plan *</label>
+              <select id="payPlan" required>
+                <option value="contabilidad">Contabilidad</option>
+                <option value="contabilidad_conciliacion">Contabilidad + Conciliacion</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Periodo de facturacion *</label>
+              <select id="payPeriodo" required>
+                <option value="mensual">Mensual</option>
+                <option value="anual">Anual</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Descuento (%)</label>
+              <input type="number" id="payDescuento" value="0" min="0" max="100">
+            </div>
+            <div class="form-group">
+              <label>Datos adicionales</label>
+              <input type="text" id="payNotas" placeholder="CIF, notas...">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary btn-green">Generar link de pago</button>
+          </div>
+        </form>
+        <div class="result" id="payResult">
+          <span class="result-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Link creado</span>
+          <button class="btn-sm" id="payCopyBtn">Copiar link</button>
+          <a class="btn-sm outline" id="payPreviewBtn" href="#" target="_blank">Abrir</a>
+        </div>
+      </div>
+
+      <!-- DECKS RECIENTES -->
+      <div id="decksSection">
+        <div class="section-header">
+          <h2>Decks recientes</h2>
+          <button class="section-toggle" id="toggleAllDecks">Ver todos</button>
+        </div>
+        <div class="card">
+          <table class="deck-table" id="deckTable">
+            <thead><tr><th>Empresa</th><th>Tipo</th><th>Progreso</th><th>Tiempo</th><th>Ultima visita</th><th></th></tr></thead>
+            <tbody id="deckTableBody"></tbody>
+          </table>
+          <div class="no-data" id="noDecks">Aun no has creado ningun deck</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h2 id="modalTitle"></h2>
+      <div class="modal-sub" id="modalSub"></div>
+      <div class="slide-stats" id="slideStats"></div>
+      <div style="margin-top:1.5rem;text-align:right"><button class="btn-sm" id="modalClose">Cerrar</button></div>
+    </div>
+  </div>
+
+  <script>
+    const PASS='esphera2026';
+    const slideNames=['Hero','Problema','Oportunidad','Como funciona','Producto','Detalle factura','Conciliacion','Comparativa','Impacto + Caso','Integracion','Por que Esphera','FAQ','CTA'];
+    let showAll=false;
+
+    // AUTH
+    if(localStorage.getItem('esphera_auth')==='1') showApp();
+    document.getElementById('loginForm').addEventListener('submit',e=>{
+      e.preventDefault();
+      if(document.getElementById('loginPass').value===PASS){localStorage.setItem('esphera_auth','1');showApp()}
+      else document.getElementById('loginError').style.display='block';
+    });
+    document.getElementById('logoutBtn').addEventListener('click',()=>{localStorage.removeItem('esphera_auth');location.reload()});
+
+    function showApp(){
+      document.getElementById('loginWrap').style.display='none';
+      document.getElementById('app').classList.add('active');
+      renderQuickStats();renderDecks();
+    }
+
+    // TILES → PANELS
+    document.querySelectorAll('.tile[data-panel]').forEach(t=>{
+      t.addEventListener('click',()=>{
+        const id=t.dataset.panel;
+        const panel=document.getElementById('panel-'+id);
+        const wasActive=panel.classList.contains('active');
+        // close all panels & deactivate tiles
+        document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+        document.querySelectorAll('.tile').forEach(ti=>ti.classList.remove('active'));
+        if(!wasActive){panel.classList.add('active');t.classList.add('active');panel.scrollIntoView({behavior:'smooth',block:'nearest'})}
+      });
+    });
+    document.querySelectorAll('.panel-close').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+        document.querySelectorAll('.tile').forEach(t=>t.classList.remove('active'));
+      });
+    });
+
+    // DECK FORM
+    const tipoEl=document.getElementById('tipo'),empresaEl=document.getElementById('empresa'),contactoEl=document.getElementById('contacto'),generateBtn=document.getElementById('generateBtn');
+    function checkForm(){generateBtn.disabled=!(tipoEl.value&&empresaEl.value.trim())}
+    tipoEl.addEventListener('change',checkForm);empresaEl.addEventListener('input',checkForm);
+
+    document.getElementById('deckForm').addEventListener('submit',e=>{
+      e.preventDefault();
+      const p=new URLSearchParams({tipo:tipoEl.value,empresa:empresaEl.value.trim()});
+      if(contactoEl.value.trim())p.set('contacto',contactoEl.value.trim());
+      const base=location.origin+location.pathname.replace(/\/[^\/]*$/,'');
+      const url=`${base}/deck.html?${p.toString()}`;
+      document.getElementById('previewBtn').href=url;
+      document.getElementById('deckResult').classList.add('visible');
+      document.getElementById('deckResult').dataset.url=url;
+      const hist=JSON.parse(localStorage.getItem('esphera_decks')||'[]');
+      hist.unshift({tipo:tipoEl.value,empresa:empresaEl.value.trim(),contacto:contactoEl.value.trim(),url,date:new Date().toISOString()});
+      if(hist.length>50)hist.pop();
+      localStorage.setItem('esphera_decks',JSON.stringify(hist));
+      renderQuickStats();renderDecks();
+    });
+    document.getElementById('copyBtn').addEventListener('click',()=>{
+      navigator.clipboard.writeText(document.getElementById('deckResult').dataset.url).then(()=>{
+        const b=document.getElementById('copyBtn');b.textContent='Copiado!';setTimeout(()=>b.textContent='Copiar link',2000);
+      });
+    });
+
+    // PAY FORM
+    document.getElementById('payForm').addEventListener('submit',e=>{
+      e.preventDefault();
+      const data={cliente:document.getElementById('payCliente').value.trim(),erp:document.getElementById('payErp').value,plan:document.getElementById('payPlan').value,periodo:document.getElementById('payPeriodo').value,descuento:document.getElementById('payDescuento').value||'0',notas:document.getElementById('payNotas').value.trim()};
+      const params=new URLSearchParams(data);
+      const base=location.origin+location.pathname.replace(/\/[^\/]*$/,'');
+      const url=`${base}/checkout.html?${params.toString()}`;
+      document.getElementById('payPreviewBtn').href=url;
+      document.getElementById('payResult').classList.add('visible');
+      document.getElementById('payResult').dataset.url=url;
+    });
+    document.getElementById('payCopyBtn').addEventListener('click',()=>{
+      navigator.clipboard.writeText(document.getElementById('payResult').dataset.url).then(()=>{
+        const b=document.getElementById('payCopyBtn');b.textContent='Copiado!';setTimeout(()=>b.textContent='Copiar link',2000);
+      });
+    });
+
+    // TOGGLE ALL
+    document.getElementById('toggleAllDecks').addEventListener('click',()=>{
+      showAll=!showAll;document.getElementById('toggleAllDecks').textContent=showAll?'Ver menos':'Ver todos';renderDecks();
+    });
+
+    // QUICK STATS
+    function renderQuickStats(){
+      const hist=JSON.parse(localStorage.getItem('esphera_decks')||'[]');
+      let v=0,t=0;
+      hist.forEach(d=>{const tk=JSON.parse(localStorage.getItem('esphera_track_'+encodeURIComponent(d.empresa))||'null');if(tk){v++;t+=Object.values(tk.slideTime).reduce((a,b)=>a+b,0)}});
+      const avg=v>0?Math.round(t/v):0;const as=avg>60?Math.floor(avg/60)+'m '+Math.round(avg%60)+'s':avg+'s';
+      document.getElementById('quickStats').innerHTML=`
+        <div class="quick-stat"><div class="quick-stat-label">Decks creados</div><div class="quick-stat-value orange">${hist.length}</div></div>
+        <div class="quick-stat"><div class="quick-stat-label">Vistos por prospects</div><div class="quick-stat-value green">${v}</div></div>
+        <div class="quick-stat"><div class="quick-stat-label">Tiempo medio</div><div class="quick-stat-value">${as}</div></div>`;
+    }
+
+    // DECKS TABLE
+    function renderDecks(){
+      const hist=JSON.parse(localStorage.getItem('esphera_decks')||'[]');
+      const tbody=document.getElementById('deckTableBody'),noData=document.getElementById('noDecks'),table=document.getElementById('deckTable'),toggle=document.getElementById('toggleAllDecks');
+      if(!hist.length){tbody.innerHTML='';noData.style.display='block';table.style.display='none';toggle.style.display='none';return}
+      noData.style.display='none';table.style.display='table';toggle.style.display=hist.length>5?'block':'none';
+      const list=showAll?hist:hist.slice(0,5);
+      tbody.innerHTML=list.map(d=>{
+        const tk=JSON.parse(localStorage.getItem('esphera_track_'+encodeURIComponent(d.empresa))||'null');
+        const pct=tk?Math.round((tk.maxSlide+1)/13*100):0;
+        const tt=tk?Object.values(tk.slideTime).reduce((a,b)=>a+b,0):0;
+        const ts=tt>60?Math.round(tt/60)+'m '+Math.round(tt%60)+'s':Math.round(tt)+'s';
+        const lv=tk?new Date(tk.lastVisit).toLocaleDateString('es-ES',{day:'numeric',month:'short'}):'—';
+        return `<tr><td style="font-weight:600">${d.empresa}</td><td><span class="badge ${d.tipo==='gestoria'?'badge-gest':'badge-emp'}">${d.tipo==='gestoria'?'Gestoria':'Empresa'}</span></td><td><span class="progress-bar"><span class="progress-fill" style="width:${pct}%"></span></span><span class="stat-tiny ${pct>=80?'stat-green':''}">${pct}%</span></td><td class="stat-tiny">${tk?ts:'—'}</td><td class="stat-tiny">${lv}</td><td><button class="btn-sm outline" onclick="showDetail('${encodeURIComponent(d.empresa)}','${d.tipo}')">Detalle</button></td></tr>`;
+      }).join('');
+    }
+
+    // MODAL
+    window.showDetail=function(enc,tipo){
+      const empresa=decodeURIComponent(enc),tk=JSON.parse(localStorage.getItem('esphera_track_'+enc)||'null');
+      document.getElementById('modalTitle').textContent=empresa;
+      document.getElementById('modalSub').textContent=tipo==='gestoria'?'Gestoria / Asesoria':'Empresa';
+      const s=document.getElementById('slideStats');
+      if(!tk){s.innerHTML='<div class="no-data">Este deck aun no ha sido abierto</div>'}
+      else{
+        const mx=Math.max(...Object.values(tk.slideTime),1);
+        s.innerHTML=slideNames.map((n,i)=>{
+          const t=tk.slideTime[i]||0,v=i<=tk.maxSlide,bp=Math.round(t/mx*100);
+          const c=bp>=70?'#F97316':bp>=40?'#F59E0B':bp>=15?'rgba(249,115,22,0.45)':'rgba(255,255,255,0.12)';
+          const lb=bp>=70?'<span style="font-size:0.6rem;font-weight:700;color:#F97316;background:rgba(249,115,22,0.12);padding:2px 6px;border-radius:100px;margin-left:4px">Top</span>':'';
+          const ts=t>=60?Math.floor(t/60)+'m '+Math.round(t%60)+'s':Math.round(t)+'s';
+          return `<div class="slide-stat-row" style="opacity:${v?1:0.25}"><span class="slide-stat-num">${String(i+1).padStart(2,'0')}</span><span class="slide-stat-name">${n}${lb}</span><span class="slide-stat-bar"><span class="slide-stat-bar-fill" style="width:${bp}%;background:${c}"></span></span><span class="slide-stat-time">${v?ts:'—'}</span></div>`;
+        }).join('');
+      }
+      document.getElementById('modalOverlay').classList.add('active');
+    };
+    document.getElementById('modalClose').addEventListener('click',()=>document.getElementById('modalOverlay').classList.remove('active'));
+    document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('active')});
+  </script>
+</body>
+</html>
