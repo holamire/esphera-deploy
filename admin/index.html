@@ -334,6 +334,20 @@
         </div>
       </div>
 
+      <!-- DEMOS RECIENTES -->
+      <div id="demoSection" style="margin-top:2rem">
+        <div class="section-header">
+          <h2>Demos recientes</h2>
+        </div>
+        <div class="card">
+          <table class="deck-table" id="demoTable">
+            <thead><tr><th>Empresa</th><th>Contacto</th><th>Tipo</th><th></th></tr></thead>
+            <tbody id="demoTableBody"></tbody>
+          </table>
+          <div class="no-data" id="noDemos">Aun no has abierto ninguna demo</div>
+        </div>
+      </div>
+
       <!-- LINKS DE PAGO RECIENTES -->
       <div id="paySection" style="margin-top:2rem">
         <div class="section-header">
@@ -377,7 +391,7 @@
     function showApp(){
       document.getElementById('loginWrap').style.display='none';
       document.getElementById('app').classList.add('active');
-      renderQuickStats();renderDecks();renderPays();
+      renderQuickStats();renderDecks();renderDemos();renderPays();
     }
 
     // TILES → PANELS
@@ -417,7 +431,7 @@
       hist.unshift({tipo:tipoEl.value,empresa:empresaEl.value.trim(),contacto:contactoEl.value.trim(),url,date:new Date().toISOString()});
       if(hist.length>50)hist.pop();
       localStorage.setItem('esphera_decks',JSON.stringify(hist));
-      renderQuickStats();renderDecks();renderPays();
+      renderQuickStats();renderDecks();renderDemos();renderPays();
     });
     document.getElementById('copyBtn').addEventListener('click',()=>{
       navigator.clipboard.writeText(document.getElementById('deckResult').dataset.url).then(()=>{
@@ -432,9 +446,15 @@
       const empresa=document.getElementById('demoEmpresa').value.trim();
       const contacto=document.getElementById('demoContacto').value.trim();
       const p=new URLSearchParams({tipo,empresa,contacto});
-      // In local dev, producto is on port 3000. In production (same domain), use /producto/
-      const base=location.port==='3001'?'http://localhost:3000':''
-      window.open(`${base}/producto/?${p.toString()}`,'_blank');
+      const base=location.port==='3001'?'http://localhost:3000':'';
+      const url=`${base}/producto/?${p.toString()}`;
+      window.open(url,'_blank');
+      // Save to history
+      const dh=JSON.parse(localStorage.getItem('esphera_demos')||'[]');
+      dh.unshift({tipo,empresa,contacto,url,date:new Date().toISOString()});
+      if(dh.length>20)dh.pop();
+      localStorage.setItem('esphera_demos',JSON.stringify(dh));
+      renderDemos();
     });
 
     // PAY PRICING CONFIG — 4 escenarios
@@ -545,6 +565,30 @@
         </tr>`;
       }).join('');
     }
+
+    // DEMO HISTORY TABLE
+    function renderDemos(){
+      const dh=JSON.parse(localStorage.getItem('esphera_demos')||'[]');
+      const tbody=document.getElementById('demoTableBody'),noData=document.getElementById('noDemos'),table=document.getElementById('demoTable');
+      if(!dh.length){tbody.innerHTML='';noData.style.display='block';table.style.display='none';return}
+      noData.style.display='none';table.style.display='table';
+      tbody.innerHTML=dh.slice(0,8).map((d,idx)=>{
+        const badge=d.tipo==='gestoria'?'badge-gest':'badge-emp';
+        const label=d.tipo==='gestoria'?'Gestoria':'Empresa';
+        return `<tr>
+          <td style="font-weight:600">${d.empresa}</td>
+          <td class="stat-tiny">${d.contacto}</td>
+          <td><span class="badge ${badge}">${label}</span></td>
+          <td style="display:flex;gap:6px"><a class="btn-sm outline" href="${d.url}" target="_blank">Abrir</a><button class="btn-sm outline" style="color:var(--red);border-color:rgba(239,68,68,0.2)" onclick="deleteDemo(${idx})">Borrar</button></td>
+        </tr>`;
+      }).join('');
+    }
+    window.deleteDemo=function(idx){
+      if(!confirm('Borrar esta demo?'))return;
+      const dh=JSON.parse(localStorage.getItem('esphera_demos')||'[]');
+      dh.splice(idx,1);localStorage.setItem('esphera_demos',JSON.stringify(dh));
+      renderDemos();
+    };
 
     // PAY HISTORY TABLE
     function renderPays(){
