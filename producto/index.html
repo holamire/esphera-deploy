@@ -1152,6 +1152,11 @@
                   <tr id="hist-c3" class="hidden bg-slate-50/60">
                     <td colspan="7" class="px-6 py-0">
                       <div class="py-3 border-l-2 border-orange-200 pl-4 ml-2">
+                        <div class="mb-3 p-3 bg-white border border-slate-200 rounded-xl" id="ctx-c3">
+                          <div class="flex items-center gap-2 mb-2"><svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg><span class="text-xs font-bold text-slate-700 uppercase tracking-wide">Contexto IA</span><span class="text-[10px] text-slate-400 ml-auto">Esphera usara esto para mejorar el procesamiento</span></div>
+                          <textarea onclick="event.stopPropagation()" class="w-full text-xs text-slate-600 border border-slate-150 rounded-lg p-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-300 placeholder-slate-300" rows="2" placeholder="Escribe contexto sobre este proveedor..." id="ctx-input-c3"></textarea>
+                          <div class="flex items-center justify-between mt-2"><button onclick="event.stopPropagation();saveContext('c3')" class="text-xs font-semibold text-orange-500 hover:text-orange-600 flex items-center gap-1 transition"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Guardar contexto</button><span id="ctx-saved-c3" class="text-[10px] text-emerald-500 font-medium hidden">✓ Guardado — IA actualizada</span></div>
+                        </div>
                         <table class="w-full text-xs">
                           <thead><tr class="text-slate-400 border-b border-slate-200">
                             <th class="pb-2 font-medium text-left">Nº Factura</th><th class="pb-2 font-medium text-left">Fecha</th><th class="pb-2 font-medium text-left">Concepto</th><th class="pb-2 font-medium text-right">Importe</th><th class="pb-2 font-medium text-center">Estado</th>
@@ -2434,6 +2439,38 @@
       const subtitle = document.querySelector('#view-historial p.text-sm.text-slate-400');
       if (subtitle) subtitle.textContent = visible + (visible === 1 ? ' lote' : ' lotes') + (empresa === 'all' ? ' · últimos 30 días' : ' · ' + label.replace(' S.L.','').replace(' S.A.',''));
     }
+
+    // Save context for a contact
+    function saveContext(id) {
+      const input = document.getElementById('ctx-input-' + id);
+      const saved = document.getElementById('ctx-saved-' + id);
+      if (input && saved) {
+        saved.classList.remove('hidden');
+        setTimeout(() => saved.classList.add('hidden'), 3000);
+      }
+    }
+
+    // Inject context boxes into all contact histories
+    (function(){
+      const defaults = {
+        c1: 'Proveedor principal de monturas y cristales opticos. Factura trimestralmente. Condiciones de pago: 60 dias.',
+        c2: 'Proveedor de lentes oftalmicas premium. Factura mensual. Rappel del 3% por volumen anual.',
+        c3: '', c4: 'Cliente particular. Revision anual. Pago al contado.',
+        c5: '', c6: '', c7: ''
+      };
+      for (let i = 1; i <= 7; i++) {
+        const id = 'c' + i;
+        const hist = document.getElementById('hist-' + id);
+        if (!hist) continue;
+        const container = hist.querySelector('div.py-3');
+        if (!container || document.getElementById('ctx-' + id)) continue;
+        const ctx = document.createElement('div');
+        ctx.id = 'ctx-' + id;
+        ctx.className = 'mb-3 p-3 bg-white border border-slate-200 rounded-xl';
+        ctx.innerHTML = '<div class="flex items-center gap-2 mb-2"><svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg><span class="text-xs font-bold text-slate-700 uppercase tracking-wide">Contexto IA</span><span class="text-[10px] text-slate-400 ml-auto">Esphera usara esto para mejorar el procesamiento</span></div><textarea onclick="event.stopPropagation()" class="w-full text-xs text-slate-600 border border-slate-150 rounded-lg p-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-300 placeholder-slate-300" rows="2" placeholder="Escribe contexto sobre este proveedor o cliente..." id="ctx-input-' + id + '">' + (defaults[id] || '') + '</textarea><div class="flex items-center justify-between mt-2"><button onclick="event.stopPropagation();saveContext(\'' + id + '\')" class="text-xs font-semibold text-orange-500 hover:text-orange-600 flex items-center gap-1 transition"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Guardar contexto</button><span id="ctx-saved-' + id + '" class="text-[10px] text-emerald-500 font-medium hidden">✓ Guardado — IA actualizada</span></div>';
+        container.insertBefore(ctx, container.firstChild);
+      }
+    })();
 
     function toggleContactHistory(id) {
       const row = document.getElementById('hist-' + id);

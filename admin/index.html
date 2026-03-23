@@ -156,10 +156,11 @@
       <div class="login-logo"><svg viewBox="0 0 202 227" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M100.604 35V46.7323C111.431 46.7323 122.055 49.4076 131.558 54.4029C101.719 99.904 50.2415 110.166 33.7511 112.333C33.9601 98.5315 38.4328 85.162 46.7999 73.8407C57.3964 59.4958 72.9393 50.1392 90.5723 47.4848C93.8955 46.9831 97.2674 46.7323 100.598 46.7323V35C96.717 35 92.7808 35.2856 88.8306 35.8848C45.9639 42.3292 16.4386 82.3055 22.8829 125.173C28.735 164.09 62.2105 192 100.402 192C104.283 192 108.219 191.707 112.169 191.115C155.036 184.671 184.561 144.694 178.117 101.827C172.265 62.9165 138.796 35 100.604 35ZM34.6011 124.093C52.3664 122.003 108.303 111.511 141.423 60.7568C142.252 61.3977 143.067 62.0596 143.868 62.7424C150.152 68.1069 155.322 74.5583 159.195 81.7203C123.797 144.541 55.7941 150.17 45.0373 150.665C39.7147 142.723 36.1338 133.673 34.5941 124.093H34.6011ZM110.428 179.522C107.105 180.024 103.733 180.275 100.402 180.275C84.5948 180.275 69.226 174.59 57.1317 164.258C56.1772 163.443 55.2506 162.593 54.345 161.722C77.21 159.172 131.001 147.614 164.72 95.2919C165.486 98.002 166.092 100.761 166.517 103.576C171.993 139.978 146.829 174.046 110.428 179.522Z" fill="currentColor"/></svg><span>Esphera</span></div>
       <p class="login-sub">Dashboard</p>
       <form id="loginForm">
+        <input type="text" id="loginUser" placeholder="Usuario" autocomplete="username" style="margin-bottom:0.75rem">
         <input type="password" id="loginPass" placeholder="Contrasena" autocomplete="current-password">
         <button type="submit" class="login-btn">Entrar</button>
       </form>
-      <div class="login-error" id="loginError">Contrasena incorrecta</div>
+      <div class="login-error" id="loginError">Usuario o contrasena incorrectos</div>
     </div>
   </div>
 
@@ -296,10 +297,6 @@
               <label>Descuento en setup (%) <span style="font-weight:400;color:var(--muted)">max 50%</span></label>
               <input type="number" id="payDescuento" value="0" min="0" max="50">
             </div>
-            <div class="form-group" style="display:flex;align-items:center;gap:8px;padding-top:1.75rem">
-              <input type="checkbox" id="payExento" style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer">
-              <label for="payExento" style="text-transform:none;letter-spacing:0;font-size:0.82rem;color:var(--text2);cursor:pointer;margin:0">Exento de IVA <span style="font-weight:400;color:var(--muted)">(Canarias, Ceuta, Melilla)</span></label>
-            </div>
             <div class="form-group">
               <label>Datos adicionales</label>
               <input type="text" id="payNotas" placeholder="CIF, notas internas...">
@@ -375,7 +372,7 @@
   </div>
 
   <script>
-    const PASS='esphera2026';
+    const AUTH_USER='esphera',AUTH_PASS='esphera2026';
     const slideNames=['Portada','El problema','Cómo funciona','Demo en vivo','Detalle factura','Asistente IA','Impacto real','Integración','Por qué Esphera','Siguiente paso'];
     let showAll=false;
 
@@ -383,7 +380,7 @@
     if(localStorage.getItem('esphera_auth')==='1') showApp();
     document.getElementById('loginForm').addEventListener('submit',e=>{
       e.preventDefault();
-      if(document.getElementById('loginPass').value===PASS){localStorage.setItem('esphera_auth','1');showApp()}
+      if(document.getElementById('loginUser').value===AUTH_USER&&document.getElementById('loginPass').value===AUTH_PASS){localStorage.setItem('esphera_auth','1');showApp()}
       else document.getElementById('loginError').style.display='block';
     });
     document.getElementById('logoutBtn').addEventListener('click',()=>{localStorage.removeItem('esphera_auth');location.reload()});
@@ -466,17 +463,16 @@
     function updatePricePreview(){
       const esc=ESCENARIOS[document.getElementById('payEscenario').value]||ESCENARIOS['1'];
       const desc=Math.min(parseInt(document.getElementById('payDescuento').value)||0,50);
-      const exento=document.getElementById('payExento').checked;
-      const iva=exento?1:1.21;
-      const ivaLabel=exento?'(exento IVA)':'+IVA';
+      const iva=1.21;
+      const ivaLabel='+IVA';
       const setupBase=esc.setup;
       const setupFinal=Math.round(setupBase*(1-desc/100));
       const setupIva=Math.round(setupFinal*iva);
       const cycleIva=Math.round(esc.cycle*iva);
       const isF=esc.modalidad==='faseado';
       let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem"><strong style="color:var(--text)">${esc.name}</strong><span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">${isF?'Pago faseado':'Pago normal'}</span></div>`;
-      html+=`<div style="display:flex;justify-content:space-between"><span>Setup${desc>0?' <span style="color:var(--green);font-weight:600">(-'+desc+'%)</span>':''}:</span><span style="font-weight:600">${exento?'':setupFinal.toLocaleString('es-ES')+'&euro; '+ivaLabel+' = '}${setupIva.toLocaleString('es-ES')}&euro;</span></div>`;
-      html+=`<div style="display:flex;justify-content:space-between"><span>Cuota mensual <span style="color:var(--muted);font-size:0.7rem">(sin descuento)</span>:</span><span style="font-weight:600">${exento?'':esc.cycle+'&euro; '+ivaLabel+' = '}${cycleIva}&euro;</span></div>`;
+      html+=`<div style="display:flex;justify-content:space-between"><span>Setup${desc>0?' <span style="color:var(--green);font-weight:600">(-'+desc+'%)</span>':''}:</span><span style="font-weight:600">${setupFinal.toLocaleString('es-ES')}&euro; ${ivaLabel} = ${setupIva.toLocaleString('es-ES')}&euro;</span></div>`;
+      html+=`<div style="display:flex;justify-content:space-between"><span>Cuota mensual <span style="color:var(--muted);font-size:0.7rem">(sin descuento)</span>:</span><span style="font-weight:600">${esc.cycle}&euro; ${ivaLabel} = ${cycleIva}&euro;</span></div>`;
       html+=`<div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted)">`;
       html+=`<strong style="color:var(--text)">Calendario de pagos (con IVA):</strong><br>`;
       if(isF){
@@ -493,14 +489,13 @@
     }
     document.getElementById('payEscenario').addEventListener('change',updatePricePreview);
     document.getElementById('payDescuento').addEventListener('input',updatePricePreview);
-    document.getElementById('payExento').addEventListener('change',updatePricePreview);
     updatePricePreview();
 
     // PAY FORM SUBMIT
     document.getElementById('payForm').addEventListener('submit',e=>{
       e.preventDefault();
       const esc=ESCENARIOS[document.getElementById('payEscenario').value]||ESCENARIOS['1'];
-      const data={cliente:document.getElementById('payCliente').value.trim(),erp:document.getElementById('payErp').value,plan:esc.name.includes('Conciliacion')?'contabilidad_conciliacion':'contabilidad',modalidad:esc.modalidad,descuento:document.getElementById('payDescuento').value||'0',exento:document.getElementById('payExento').checked?'1':'0',notas:document.getElementById('payNotas').value.trim()};
+      const data={cliente:document.getElementById('payCliente').value.trim(),erp:document.getElementById('payErp').value,plan:esc.name.includes('Conciliacion')?'contabilidad_conciliacion':'contabilidad',modalidad:esc.modalidad,descuento:document.getElementById('payDescuento').value||'0',notas:document.getElementById('payNotas').value.trim()};
       const params=new URLSearchParams(data);
       const base=location.origin+location.pathname.replace(/\/[^\/]*$/,'');
       const url=`${base}/checkout.html?${params.toString()}`;
