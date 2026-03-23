@@ -348,10 +348,10 @@
       <div class="slide-inner" style="text-align:center;max-width:100%;padding:0">
         <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:10;display:flex;align-items:center;gap:12px;background:rgba(255,251,247,0.9);backdrop-filter:blur(12px);padding:6px 16px;border-radius:100px;border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,0.06)">
           <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent)">Demo en vivo</span>
-          <a href="/producto/index.html" target="_blank" style="font-size:11px;font-weight:600;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:4px">Abrir en ventana completa ↗</a>
+          <a href="/producto/index.html?tipo=${tipo}&empresa=${encodeURIComponent(empresa)}&contacto=${encodeURIComponent(contacto)}" target="_blank" style="font-size:11px;font-weight:600;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:4px">Abrir en ventana completa ↗</a>
         </div>
         <div style="overflow:hidden">
-          <iframe id="product-iframe" src="/producto/index.html" style="width:100%;height:100vh;border:none;display:block"></iframe>
+          <iframe id="product-iframe" src="/producto/index.html?tipo=${tipo}&empresa=${encodeURIComponent(empresa)}&contacto=${encodeURIComponent(contacto)}" style="width:100%;height:100vh;border:none;display:block"></iframe>
         </div>
       </div>
     </section>
