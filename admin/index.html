@@ -422,7 +422,7 @@
       e.preventDefault();
       const p=new URLSearchParams({tipo:tipoEl.value,empresa:empresaEl.value.trim()});
       if(contactoEl.value.trim())p.set('contacto',contactoEl.value.trim());
-      const base='http://localhost:3000';
+      const base=location.origin+'/admin';
       const url=`${base}/deck.html?${p.toString()}`;
       document.getElementById('previewBtn').href=url;
       document.getElementById('deckResult').classList.add('visible');
@@ -446,8 +446,7 @@
       const empresa=document.getElementById('demoEmpresa').value.trim();
       const contacto=document.getElementById('demoContacto').value.trim();
       const p=new URLSearchParams({tipo,empresa,contacto});
-      const base=location.port==='3001'?'http://localhost:3000':'';
-      const url=`${base}/producto/?${p.toString()}`;
+      const url=`${location.origin}/producto/?${p.toString()}`;
       window.open(url,'_blank');
       // Save to history
       const dh=JSON.parse(localStorage.getItem('esphera_demos')||'[]');
